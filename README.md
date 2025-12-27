@@ -25,6 +25,14 @@
 - mAP50: 84.2%
 - 数据集: [CableInspect-AD](https://mila-iqia.github.io/cableinspect-ad/) (已转换为YOLO格式)
 
+## 数据集许可
+
+本项目使用的 CableInspect-AD 数据集由 Mila / Hydro-Québec 提供，采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可证。
+
+- 仅限非商业用途
+- 需注明来源
+- 衍生作品需使用相同许可证
+
 ## 快速开始
 
 ### 安装依赖
