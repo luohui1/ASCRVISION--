@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACSR VISION - 3D缺陷可视化</title>
+    <style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--gold:#d4af37;--gold-light:#f4d03f;--black:#050505;--danger:#f87171;--success:#4ade80}
+body{font-family:'Segoe UI',sans-serif;background:var(--black);color:#f0f0f0;overflow:hidden}
+#container{width:100vw;height:100vh;position:relative}
+#canvas3d{width:100%;height:100%;display:block}
+
+.nav-bar{position:absolute;top:0;left:0;right:0;padding:16px 24px;background:rgba(5,5,5,0.9);border-bottom:1px solid rgba(212,175,55,0.2);display:flex;align-items:center;justify-content:space-between;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.logo-mark{width:36px;height:36px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:18px;height:18px;color:var(--gold)}
+.logo-text{font-size:1.2rem;font-weight:600}
+.logo-text span{color:var(--gold)}
+.nav-links{display:flex;gap:12px}
+.nav-link{padding:8px 16px;background:transparent;border:1px solid rgba(212,175,55,0.3);color:var(--gold);font-size:0.8rem;text-decoration:none;transition:all 0.3s}
+.nav-link:hover{background:var(--gold);color:var(--black)}
+
+.control-panel{position:absolute;top:80px;left:20px;background:rgba(10,10,20,0.95);border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:20px;width:280px;backdrop-filter:blur(10px)}
+.panel-title{font-size:16px;font-weight:600;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel-title svg{width:20px;height:20px}
+
+.defect-list{max-height:300px;overflow-y:auto}
+.defect-item{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.3s}
+.defect-item:hover,.defect-item.active{background:rgba(248,113,113,0.2);border-color:var(--danger)}
+.defect-name{font-weight:600;color:var(--danger);margin-bottom:4px}
+.defect-info{font-size:12px;color:#888}
+.no-defects{text-align:center;padding:40px 20px;color:#666}
+.no-defects svg{width:48px;height:48px;color:var(--success);margin-bottom:12px}
+
+.info-panel{position:absolute;top:80px;right:20px;background:rgba(10,10,20,0.95);border:1px solid rgba(212,175,55,0.3);border-radius:12px;padding:20px;width:260px;backdrop-filter:blur(10px)}
+.info-title{font-size:14px;color:var(--gold);margin-bottom:12px}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.1)}
+.info-label{color:#888;font-size:12px}
+.info-value{color:#fff;font-size:12px;font-weight:500}
+
+.view-controls{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:rgba(10,10,20,0.9);padding:12px;border-radius:8px;border:1px solid rgba(212,175,55,0.2)}
+.view-btn{padding:8px 16px;background:transparent;border:1px solid rgba(212,175,55,0.3);color:#fff;font-size:12px;cursor:pointer;transition:all 0.3s;border-radius:4px}
+.view-btn:hover,.view-btn.active{background:var(--gold);color:var(--black);border-color:var(--gold)}
+
+.loading{position:absolute;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200}
+.loading.hidden{display:none}
+.spinner{width:48px;height:48px;border:3px solid rgba(212,175,55,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:16px;color:var(--gold);font-size:14px}
+
+.tooltip{position:absolute;background:rgba(10,10,20,0.95);border:1px solid var(--danger);border-radius:8px;padding:12px;pointer-events:none;z-index:150;display:none;min-width:150px}
+.tooltip.show{display:block}
+.tooltip-title{font-weight:600;color:var(--danger);margin-bottom:4px}
+.tooltip-content{font-size:12px;color:#ccc}
+    </style>
+</head>
+<body>
+<div id="container">
+    <canvas id="canvas3d"></canvas>
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">加载3D模型...</div>
+    </div>
+    
+    <nav class="nav-bar">
+        <a href="/" class="logo">
+            <div class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg></div>
+            <div class="logo-text">ACSR<span>VISION</span></div>
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">检测页面</a>
+            <a href="/landing" class="nav-link">首页</a>
+        </div>
+    </nav>
+    
+    <div class="control-panel">
+        <div class="panel-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>缺陷列表</div>
+        <div class="defect-list" id="defectList">
+            <div class="no-defects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div>暂无缺陷数据</div>
+                <div style="font-size:12px;margin-top:8px">请先在检测页面上传图片</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-panel">
+        <div class="info-title">ACSR钢芯铝绞线结构</div>
+        <div class="info-row"><span class="info-label">中心钢芯</span><span class="info-value">7股镀锌钢丝</span></div>
+        <div class="info-row"><span class="info-label">外层铝线</span><span class="info-value">26股硬铝线</span></div>
+        <div class="info-row"><span class="info-label">绞合方向</span><span class="info-value">右向绞合</span></div>
+        <div class="info-row"><span class="info-label">标准规格</span><span class="info-value">LGJ-240/30</span></div>
+        <div class="info-row" style="border:none"><span class="info-label">执行标准</span><span class="info-value">GB/T 1179-2017</span></div>
+    </div>
+    
+    <div class="view-controls">
+        <button class="view-btn active" onclick="setView('default')">默认视图</button>
+        <button class="view-btn" onclick="setView('top')">俯视图</button>
+        <button class="view-btn" onclick="setView('side')">侧视图</button>
+        <button class="view-btn" onclick="setView('section')">剖面图</button>
+        <button class="view-btn" onclick="toggleDefects()">显示/隐藏缺陷</button>
+    </div>
+    
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-title" id="tooltipTitle">缺陷名称</div>
+        <div class="tooltip-content" id="tooltipContent">置信度: 95%</div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+let scene, camera, renderer, controls;
+let cableGroup, defectMarkers = [];
+let defectsVisible = true;
+const defectData = [];
+
+// 从localStorage获取检测结果
+function loadDefectData() {
+    const lastResult = localStorage.getItem('lastDetectionResult');
+    if (lastResult) {
+        try {
+            const data = JSON.parse(lastResult);
+            if (data.detections && data.detections.length > 0) {
+                data.detections.forEach((d, i) => {
+                    defectData.push({
+                        id: i,
+                        name: d.class_name || '未知缺陷',
+                        confidence: d.confidence || 0,
+                        position: { x: (Math.random() - 0.5) * 8, y: 0, z: (Math.random() - 0.5) * 0.5 }
+                    });
+                });
+            }
+        } catch(e) { console.log('No detection data'); }
+    }
+    // 演示数据
+    if (defectData.length === 0) {
+        defectData.push(
+            { id: 0, name: '断股', confidence: 95.2, position: { x: -3, y: 0.15, z: 0 } },
+            { id: 1, name: '散股', confidence: 87.5, position: { x: 1, y: 0.12, z: 0.1 } },
+            { id: 2, name: '划痕', confidence: 78.3, position: { x: 4, y: -0.1, z: -0.05 } }
+        );
+    }
+}
+
+function init() {
+    loadDefectData();
+    const canvas = document.getElementById('canvas3d');
+    
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050508);
+    
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(8, 4, 8);
+    
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 3;
+    controls.maxDistance = 20;
+    
+    // 灯光
+    scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 10, 5);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+    scene.add(new THREE.PointLight(0xd4af37, 0.3, 20));
+    
+    createACSRCable();
+    createDefectMarkers();
+    updateDefectList();
+    
+    document.getElementById('loading').classList.add('hidden');
+    
+    window.addEventListener('resize', onResize);
+    canvas.addEventListener('mousemove', onMouseMove);
+    
+    animate();
+}
+
+function createACSRCable() {
+    cableGroup = new THREE.Group();
+    const cableLength = 12;
+    
+    // 钢芯材质 - 银灰色金属
+    const steelMat = new THREE.MeshStandardMaterial({
+        color: 0x8a8a8a,
+        metalness: 0.9,
+        roughness: 0.3
+    });
+    
+    // 铝线材质 - 银白色金属
+    const aluminumMat = new THREE.MeshStandardMaterial({
+        color: 0xc0c0c0,
+        metalness: 0.85,
+        roughness: 0.25
+    });
+    
+    // 中心钢芯 (1根中心 + 6根外围 = 7股)
+    const steelRadius = 0.025;
+    const steelCoreRadius = 0.08;
+    
+    // 中心钢丝
+    const centerSteel = new THREE.Mesh(
+        new THREE.CylinderGeometry(steelRadius, steelRadius, cableLength, 16),
+        steelMat
+    );
+    centerSteel.rotation.z = Math.PI / 2;
+    cableGroup.add(centerSteel);
+    
+    // 外围6根钢丝绞合
+    for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const wire = createHelicalWire(steelRadius, steelCoreRadius * 0.7, cableLength, 8, steelMat);
+        wire.rotation.y = angle;
+        cableGroup.add(wire);
+    }
+    
+    // 外层铝线 (第一层12根 + 第二层18根 = 30根，简化为26根显示)
+    const alRadius = 0.035;
+    
+    // 第一层铝线 - 12根
+    for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const wire = createHelicalWire(alRadius, 0.12, cableLength, 6, aluminumMat);
+        wire.rotation.y = angle;
+        cableGroup.add(wire);
+    }
+    
+    // 第二层铝线 - 14根 (简化)
+    for (let i = 0; i < 14; i++) {
+        const angle = (i / 14) * Math.PI * 2 + 0.1;
+        const wire = createHelicalWire(alRadius, 0.19, cableLength, 5, aluminumMat);
+        wire.rotation.y = angle;
+        cableGroup.add(wire);
+    }
+    
+    scene.add(cableGroup);
+}
+
+function createHelicalWire(radius, helixRadius, length, twists, material) {
+    const points = [];
+    const segments = 200;
+    
+    for (let i = 0; i <= segments; i++) {
+        const t = (i / segments) * length - length / 2;
+        const angle = (i / segments) * twists * Math.PI * 2;
+        points.push(new THREE.Vector3(
+            t,
+            Math.cos(angle) * helixRadius,
+            Math.sin(angle) * helixRadius
+        ));
+    }
+    
+    const curve = new THREE.CatmullRomCurve3(points);
+    const geometry = new THREE.TubeGeometry(curve, segments, radius, 8, false);
+    return new THREE.Mesh(geometry, material);
+}
+
+function createDefectMarkers() {
+    const markerGeo = new THREE.SphereGeometry(0.15, 16, 16);
+    const markerMat = new THREE.MeshBasicMaterial({ color: 0xf87171, transparent: true, opacity: 0.8 });
+    const ringGeo = new THREE.RingGeometry(0.2, 0.25, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xf87171, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+    
+    defectData.forEach(defect => {
+        const group = new THREE.Group();
+        
+        const marker = new THREE.Mesh(markerGeo, markerMat.clone());
+        group.add(marker);
+        
+        const ring = new THREE.Mesh(ringGeo, ringMat.clone());
+        ring.rotation.x = Math.PI / 2;
+        group.add(ring);
+        
+        group.position.set(defect.position.x, defect.position.y, defect.position.z);
+        group.userData = defect;
+        
+        scene.add(group);
+        defectMarkers.push(group);
+    });
+}
+
+function updateDefectList() {
+    const list = document.getElementById('defectList');
+    if (defectData.length === 0) return;
+    
+    list.innerHTML = defectData.map(d => `
+        <div class="defect-item" onclick="focusDefect(${d.id})" id="defect-${d.id}">
+            <div class="defect-name">${d.name}</div>
+            <div class="defect-info">置信度: ${d.confidence.toFixed(1)}% | 位置: ${d.position.x.toFixed(1)}m</div>
+        </div>
+    `).join('');
+}
+
+function focusDefect(id) {
+    const defect = defectData.find(d => d.id === id);
+    if (!defect) return;
+    
+    document.querySelectorAll('.defect-item').forEach(el => el.classList.remove('active'));
+    document.getElementById(`defect-${id}`).classList.add('active');
+    
+    const target = new THREE.Vector3(defect.position.x, defect.position.y, defect.position.z);
+    camera.position.set(target.x + 3, target.y + 2, target.z + 3);
+    controls.target.copy(target);
+    
+    // 高亮标记
+    defectMarkers.forEach((m, i) => {
+        m.children[0].material.opacity = i === id ? 1 : 0.5;
+        m.scale.setScalar(i === id ? 1.3 : 1);
+    });
+}
+
+function setView(view) {
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const views = {
+        default: { pos: [8, 4, 8], target: [0, 0, 0] },
+        top: { pos: [0, 10, 0], target: [0, 0, 0] },
+        side: { pos: [0, 0, 10], target: [0, 0, 0] },
+        section: { pos: [0, 2, 3], target: [0, 0, 0] }
+    };
+    
+    const v = views[view] || views.default;
+    camera.position.set(...v.pos);
+    controls.target.set(...v.target);
+}
+
+function toggleDefects() {
+    defectsVisible = !defectsVisible;
+    defectMarkers.forEach(m => m.visible = defectsVisible);
+}
+
+function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseMove(e) {
+    const mouse = new THREE.Vector2(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -(e.clientY / window.innerHeight) * 2 + 1
+    );
+    
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    
+    const intersects = raycaster.intersectObjects(defectMarkers, true);
+    const tooltip = document.getElementById('tooltip');
+    
+    if (intersects.length > 0) {
+        let obj = intersects[0].object;
+        while (obj.parent && !obj.userData.name) obj = obj.parent;
+        
+        if (obj.userData.name) {
+            tooltip.style.left = e.clientX + 15 + 'px';
+            tooltip.style.top = e.clientY + 15 + 'px';
+            document.getElementById('tooltipTitle').textContent = obj.userData.name;
+            document.getElementById('tooltipContent').textContent = `置信度: ${obj.userData.confidence.toFixed(1)}%`;
+            tooltip.classList.add('show');
+            return;
+        }
+    }
+    tooltip.classList.remove('show');
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    
+    // 缺陷标记动画
+    const time = Date.now() * 0.002;
+    defectMarkers.forEach((m, i) => {
+        m.children[1].rotation.z = time + i;
+        m.children[0].material.opacity = 0.6 + Math.sin(time * 2 + i) * 0.2;
+    });
+    
+    renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body>
+</html>

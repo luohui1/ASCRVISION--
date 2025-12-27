@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI质检系统 - CableVision AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+:root {
+    --bg-primary: #09090b;
+    --bg-secondary: #18181b;
+    --bg-tertiary: #27272a;
+    --bg-glass: rgba(24, 24, 27, 0.85);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.1);
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #71717a;
+    --accent-primary: #3b82f6;
+    --accent-secondary: #2563eb;
+    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #6366f1;
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+.ambient-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.ambient-orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.3; }
+.ambient-orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%); top: -150px; left: 50%; transform: translateX(-50%); }
+.ambient-orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%); bottom: -100px; right: -100px; }
+
+.nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    padding: 12px 24px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+}
+.nav-inner {
+    max-width: 1600px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.logo-mark {
+    width: 38px; height: 38px;
+    background: var(--accent-gradient);
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+.logo-mark svg { width: 20px; height: 20px; color: white; }
+.logo-text { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.logo-text span { color: var(--accent-primary); }
+
+.nav-links { display: flex; gap: 4px; }
+.nav-link {
+    padding: 8px 16px; font-size: 0.8rem; font-weight: 500;
+    color: var(--text-secondary); text-decoration: none;
+    border-radius: var(--radius-sm); transition: var(--transition-fast);
+}
+.nav-link:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+.nav-link.active { color: var(--accent-primary); background: rgba(59, 130, 246, 0.1); }
+
+.nav-stats { display: flex; gap: 24px; }
+.nav-stat { text-align: center; }
+.nav-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--accent-primary); }
+.nav-stat-label { font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.main {
+    position: relative; z-index: 1;
+    padding: 80px 24px 24px;
+    max-width: 1400px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 380px; gap: 24px;
+}
+
+.page-header { grid-column: 1 / -1; text-align: center; margin-bottom: 16px; }
+.page-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.page-title span { color: var(--accent-primary); }
+
+.panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg); overflow: hidden;
+}
+.panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.panel-title { font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.panel-title-icon {
+    width: 32px; height: 32px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+}
+.panel-title-icon svg { width: 16px; height: 16px; color: var(--accent-primary); }
+.panel-body { padding: 20px; }
+
+/* Upload Zone */
+.upload-zone {
+    border: 2px dashed var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-base);
+    background: rgba(59, 130, 246, 0.02);
+}
+.upload-zone:hover, .upload-zone.active {
+    border-color: var(--accent-primary);
+    background: rgba(59, 130, 246, 0.05);
+}
+.upload-icon {
+    width: 64px; height: 64px; margin: 0 auto 16px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+.upload-icon svg { width: 28px; height: 28px; color: var(--accent-primary); }
+.upload-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.upload-hint { font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 16px; }
+.upload-formats { display: flex; justify-content: center; gap: 8px; }
+.format-tag {
+    padding: 4px 10px; font-size: 0.65rem; font-weight: 600;
+    background: var(--bg-tertiary); border-radius: var(--radius-sm);
+    color: var(--text-secondary); text-transform: uppercase;
+}
+
+/* Preview */
+.preview-container { display: none; }
+.preview-container.show { display: block; }
+.preview-box { position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-primary); }
+.preview-box img { width: 100%; display: block; }
+.preview-overlay { position: absolute; inset: 0; pointer-events: none; }
+.scan-line {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    box-shadow: 0 0 20px var(--accent-primary);
+    display: none;
+}
+.scanning .scan-line { display: block; animation: scan 1.5s linear infinite; }
+@keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+.preview-actions { display: flex; gap: 12px; margin-top: 16px; }
+.btn {
+    padding: 12px 20px; font-size: 0.8rem; font-weight: 600;
+    border: none; border-radius: var(--radius-md);
+    cursor: pointer; transition: var(--transition-fast);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn svg { width: 16px; height: 16px; }
+.btn-primary {
+    flex: 1; background: var(--accent-gradient); color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-outline {
+    background: transparent; border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+}
+.btn-outline:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+
+/* Result */
+.result-placeholder { text-align: center; padding: 60px 20px; }
+.placeholder-icon { width: 56px; height: 56px; margin: 0 auto 16px; color: var(--text-tertiary); }
+.placeholder-icon svg { width: 100%; height: 100%; }
+.placeholder-text { font-size: 0.85rem; color: var(--text-tertiary); }
+
+.result-content { display: none; }
+.result-content.show { display: block; }
+.result-status { text-align: center; padding: 20px; margin-bottom: 16px; border-radius: var(--radius-md); }
+.result-status.pass { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); }
+.result-status.fail { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+.result-status-icon { font-size: 2rem; margin-bottom: 8px; }
+.result-status-text { font-size: 1rem; font-weight: 600; }
+.result-status.pass .result-status-text { color: var(--success); }
+.result-status.fail .result-status-text { color: var(--danger); }
+
+.defect-list { display: flex; flex-direction: column; gap: 10px; }
+.defect-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; background: var(--bg-tertiary);
+    border-radius: var(--radius-sm); border-left: 3px solid var(--danger);
+}
+.defect-name { font-size: 0.85rem; font-weight: 500; flex: 1; }
+.defect-conf {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; padding: 4px 8px;
+    background: rgba(239, 68, 68, 0.15); color: var(--danger);
+    border-radius: var(--radius-sm);
+}
+
+.result-image { margin-top: 16px; border-radius: var(--radius-md); overflow: hidden; }
+.result-image img { width: 100%; display: block; }
+
+@media (max-width: 1000px) { .main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="ambient-bg">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+</div>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="http://localhost:8080" class="logo">
+            <div class="logo-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+            </div>
+            <div class="logo-text">Cable<span>Vision</span></div>
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link active">质检系统</a>
+            <a href="http://localhost:5001" class="nav-link">生产监控</a>
+            <a href="http://localhost:5002" class="nav-link">批次追溯</a>
+            <a href="http://localhost:5003" class="nav-link">数据分析</a>
+        </div>
+        <div class="nav-stats">
+            <div class="nav-stat"><div class="nav-stat-value" id="todayCount">0</div><div class="nav-stat-label">今日检测</div></div>
+            <div class="nav-stat"><div class="nav-stat-value" id="defectCount">0</div><div class="nav-stat-label">缺陷发现</div></div>
+            <div class="nav-stat"><div class="nav-stat-value" id="passRate">0%</div><div class="nav-stat-label">合格率</div></div>
+        </div>
+    </div>
+</nav>
+
+<main class="main">
+    <div class="page-header">
+        <h1 class="page-title">AI<span>智能质检</span></h1>
+    </div>
+
+    <div class="panel upload-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <div class="panel-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+                图像上传
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 14.899A7 7 0 1115.71 8h1.79a4.5 4.5 0 012.5 8.242"/><path d="M12 12v9"/><path d="M8 17l4-5 4 5"/></svg></div>
+                <div class="upload-title">拖放图像或点击上传</div>
+                <div class="upload-hint">支持 JPG, PNG, BMP 格式</div>
+                <div class="upload-formats"><span class="format-tag">JPG</span><span class="format-tag">PNG</span><span class="format-tag">BMP</span></div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+            <div class="preview-container" id="previewContainer">
+                <div class="preview-box"><img id="previewImg" src="" alt="预览"><div class="preview-overlay"><div class="scan-line"></div></div></div>
+                <div class="preview-actions">
+                    <button class="btn btn-outline" onclick="resetUpload()">重新上传</button>
+                    <button class="btn btn-primary" id="detectBtn" onclick="startDetection()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>开始检测</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel result-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <div class="panel-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
+                检测结果
+            </div>
+        </div>
+        <div class="panel-body">
+            <div class="result-placeholder" id="resultPlaceholder">
+                <div class="placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                <div class="placeholder-text">等待检测...</div>
+            </div>
+            <div class="result-content" id="resultContent"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const previewContainer = document.getElementById('previewContainer');
+const previewImg = document.getElementById('previewImg');
+const previewBox = document.querySelector('.preview-box');
+const detectBtn = document.getElementById('detectBtn');
+const resultPlaceholder = document.getElementById('resultPlaceholder');
+const resultContent = document.getElementById('resultContent');
+
+let currentFile = null;
+
+// Upload handlers
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('active'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('active'));
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('active');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+    if (!file.type.startsWith('image/')) return alert('请上传图片文件');
+    currentFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+        previewImg.src = e.target.result;
+        uploadZone.style.display = 'none';
+        previewContainer.classList.add('show');
+        resultPlaceholder.style.display = 'block';
+        resultContent.classList.remove('show');
+    };
+    reader.readAsDataURL(file);
+}
+
+function resetUpload() {
+    currentFile = null;
+    fileInput.value = '';
+    previewImg.src = '';
+    uploadZone.style.display = 'block';
+    previewContainer.classList.remove('show');
+    previewBox.classList.remove('scanning');
+    resultPlaceholder.style.display = 'block';
+    resultContent.classList.remove('show');
+}
+
+async function startDetection() {
+    if (!currentFile) return;
+    detectBtn.disabled = true;
+    previewBox.classList.add('scanning');
+    resultPlaceholder.innerHTML = '<div class="placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div class="placeholder-text">正在检测...</div>';
+    
+    const formData = new FormData();
+    formData.append('file', currentFile);
+    
+    try {
+        const res = await fetch('/detect', { method: 'POST', body: formData });
+        const data = await res.json();
+        previewBox.classList.remove('scanning');
+        detectBtn.disabled = false;
+        showResult(data);
+        loadStats();
+    } catch (e) {
+        previewBox.classList.remove('scanning');
+        detectBtn.disabled = false;
+        resultPlaceholder.innerHTML = '<div class="placeholder-text" style="color:var(--danger)">检测失败，请重试</div>';
+    }
+}
+
+function showResult(data) {
+    resultPlaceholder.style.display = 'none';
+    const defects = data.detections || [];
+    const isPass = defects.length === 0;
+    
+    let html = `<div class="result-status ${isPass ? 'pass' : 'fail'}">
+        <div class="result-status-icon">${isPass ? '✓' : '!'}</div>
+        <div class="result-status-text">${isPass ? '检测合格' : '发现 ' + defects.length + ' 个缺陷'}</div>
+    </div>`;
+    
+    if (!isPass) {
+        html += '<div class="defect-list">' + defects.map(d => `
+            <div class="defect-item">
+                <div class="defect-name">${d.class_name || d.class}</div>
+                <div class="defect-conf">${(d.confidence * 100).toFixed(1)}%</div>
+            </div>
+        `).join('') + '</div>';
+    }
+    
+    if (data.image) {
+        const prefix = data.image.startsWith('data:') ? '' : 'data:image/jpeg;base64,';
+        html += `<div class="result-image"><img src="${prefix}${data.image}" alt="检测结果"></div>`;
+    }
+    
+    resultContent.innerHTML = html;
+    resultContent.classList.add('show');
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('todayCount').textContent = data.today_count || 0;
+        document.getElementById('defectCount').textContent = data.defect_count || 0;
+        document.getElementById('passRate').textContent = (data.pass_rate || 0) + '%';
+    } catch (e) {}
+}
+
+loadStats();
+</script>
+</body>
+</html>

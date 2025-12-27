@@ -1,0 +1,58 @@
+# 数据集 (太大，不提交)
+yolo_training/cableinspect_yolo/
+yolo_training/CableInspect-AD/
+yolo_training/data/
+
+# 检测结果
+web_app/results/
+web_app/uploads/
+
+# 训练输出
+runs/
+*.pt
+!yolo_training/weights/*.pt
+
+# 备份
+backups/
+
+# 演示视频
+demo_video.mp4
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+logs/
+
+# 环境变量
+.env
+.env.local
+
+# 临时文件
+*.tmp
+*.temp
+.claude/
+
+# 测试输出
+test_samples/output/
+web_app/reports/

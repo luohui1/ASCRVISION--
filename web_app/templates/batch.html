@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>批量检测 - ACSR VISION</title>
+    <style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--black:#050505;--black-card:#0d0d0d;--gold:#d4af37;--gold-light:#f4d03f;--white:#fafafa;--white-dim:#a0a0a0;--success:#4ade80;--danger:#f87171}
+body{font-family:'Segoe UI',sans-serif;background:var(--black);color:var(--white);min-height:100vh}
+
+nav{background:rgba(5,5,5,0.95);border-bottom:1px solid rgba(212,175,55,0.2);padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff}
+.logo-mark{width:36px;height:36px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:18px;height:18px;color:var(--gold)}
+.logo-text{font-size:1.2rem;font-weight:600}
+.logo-text span{color:var(--gold)}
+.nav-links{display:flex;gap:12px}
+.nav-link{padding:8px 16px;background:transparent;border:1px solid rgba(212,175,55,0.3);color:var(--gold);font-size:0.8rem;text-decoration:none;transition:all 0.3s}
+.nav-link:hover{background:var(--gold);color:var(--black)}
+
+.main{max-width:1200px;margin:0 auto;padding:32px}
+.page-title{font-size:1.8rem;font-weight:600;margin-bottom:24px;color:var(--gold)}
+
+.upload-section{background:var(--black-card);border:1px solid rgba(212,175,55,0.2);border-radius:12px;padding:32px;margin-bottom:24px}
+.upload-zone{border:2px dashed rgba(212,175,55,0.3);border-radius:8px;padding:48px;text-align:center;cursor:pointer;transition:all 0.3s}
+.upload-zone:hover,.upload-zone.active{border-color:var(--gold);background:rgba(212,175,55,0.05)}
+.upload-icon{width:64px;height:64px;margin:0 auto 16px;border:1px solid rgba(212,175,55,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.upload-icon svg{width:28px;height:28px;color:var(--gold)}
+.upload-title{font-size:1.1rem;font-weight:600;margin-bottom:8px}
+.upload-hint{font-size:0.85rem;color:var(--white-dim)}
+
+.file-list{margin-top:20px;max-height:200px;overflow-y:auto}
+.file-item{display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;margin-bottom:8px}
+.file-name{font-size:0.85rem}
+.file-remove{background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem}
+
+.actions{display:flex;gap:12px;margin-top:20px}
+.btn{padding:12px 24px;border:none;border-radius:6px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.3s}
+.btn-primary{background:var(--gold);color:var(--black)}
+.btn-primary:hover{background:var(--gold-light)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-secondary{background:transparent;border:1px solid rgba(212,175,55,0.3);color:var(--gold)}
+
+.progress-section{display:none;margin-bottom:24px}
+.progress-section.show{display:block}
+.progress-bar{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--gold);width:0;transition:width 0.3s}
+.progress-text{font-size:0.85rem;color:var(--white-dim);margin-top:8px}
+
+.results-section{display:none}
+.results-section.show{display:block}
+.results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.results-title{font-size:1.2rem;font-weight:600;color:var(--gold)}
+.results-stats{display:flex;gap:16px}
+.stat{font-size:0.85rem}
+.stat-pass{color:var(--success)}
+.stat-fail{color:var(--danger)}
+
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.result-card{background:var(--black-card);border:1px solid rgba(212,175,55,0.2);border-radius:8px;overflow:hidden}
+.result-image{width:100%;height:180px;object-fit:cover;background:#111}
+.result-info{padding:12px}
+.result-filename{font-size:0.85rem;font-weight:600;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-status{display:inline-block;padding:4px 8px;border-radius:4px;font-size:0.75rem;font-weight:600}
+.result-status.pass{background:rgba(74,222,128,0.2);color:var(--success)}
+.result-status.fail{background:rgba(248,113,113,0.2);color:var(--danger)}
+.result-defects{font-size:0.75rem;color:var(--white-dim);margin-top:8px}
+.result-actions{display:flex;gap:8px;margin-top:12px}
+.result-btn{flex:1;padding:6px;background:transparent;border:1px solid rgba(212,175,55,0.3);color:var(--gold);font-size:0.7rem;cursor:pointer;border-radius:4px}
+.result-btn:hover{background:var(--gold);color:var(--black)}
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/" class="logo">
+        <div class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/></svg></div>
+        <div class="logo-text">ACSR<span>VISION</span></div>
+    </a>
+    <div class="nav-links">
+        <a href="/" class="nav-link">单张检测</a>
+        <a href="/dashboard" class="nav-link">数据统计</a>
+        <a href="/landing" class="nav-link">首页</a>
+    </div>
+</nav>
+
+<main class="main">
+    <h1 class="page-title">批量检测</h1>
+    
+    <div class="upload-section">
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+            <div class="upload-title">拖放多张图片到此处</div>
+            <div class="upload-hint">或点击选择文件，支持JPG/PNG格式</div>
+            <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        </div>
+        <div class="file-list" id="fileList"></div>
+        <div class="actions">
+            <button class="btn btn-primary" id="detectBtn" disabled onclick="startBatchDetect()">开始批量检测</button>
+            <button class="btn btn-secondary" onclick="clearFiles()">清空列表</button>
+        </div>
+    </div>
+    
+    <div class="progress-section" id="progressSection">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">正在检测...</div>
+    </div>
+    
+    <div class="results-section" id="resultsSection">
+        <div class="results-header">
+            <div class="results-title">检测结果</div>
+            <div class="results-stats">
+                <span class="stat stat-pass" id="passCount">合格: 0</span>
+                <span class="stat stat-fail" id="failCount">不合格: 0</span>
+            </div>
+        </div>
+        <div class="results-grid" id="resultsGrid"></div>
+    </div>
+</main>
+
+<script>
+let files = [];
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const detectBtn = document.getElementById('detectBtn');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('active'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('active'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('active'); addFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => addFiles(e.target.files));
+
+function addFiles(newFiles) {
+    for (let f of newFiles) {
+        if (f.type.startsWith('image/') && !files.find(x => x.name === f.name)) {
+            files.push(f);
+        }
+    }
+    renderFileList();
+}
+
+function renderFileList() {
+    fileList.innerHTML = files.map((f, i) => `
+        <div class="file-item">
+            <span class="file-name">${f.name}</span>
+            <button class="file-remove" onclick="removeFile(${i})">&times;</button>
+        </div>
+    `).join('');
+    detectBtn.disabled = files.length === 0;
+}
+
+function removeFile(i) { files.splice(i, 1); renderFileList(); }
+function clearFiles() { files = []; renderFileList(); document.getElementById('resultsSection').classList.remove('show'); }
+
+async function startBatchDetect() {
+    if (files.length === 0) return;
+    
+    detectBtn.disabled = true;
+    document.getElementById('progressSection').classList.add('show');
+    document.getElementById('resultsSection').classList.remove('show');
+    
+    const formData = new FormData();
+    files.forEach(f => formData.append('images', f));
+    
+    document.getElementById('progressFill').style.width = '30%';
+    document.getElementById('progressText').textContent = `正在检测 ${files.length} 张图片...`;
+    
+    try {
+        const res = await fetch('/batch/detect', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('progressText').textContent = '检测完成!';
+        
+        setTimeout(() => {
+            document.getElementById('progressSection').classList.remove('show');
+            showResults(data.results);
+        }, 500);
+    } catch (err) {
+        alert('检测失败: ' + err.message);
+    }
+    
+    detectBtn.disabled = false;
+}
+
+function showResults(results) {
+    const passCount = results.filter(r => r.conclusion === '合格').length;
+    const failCount = results.length - passCount;
+    
+    document.getElementById('passCount').textContent = `合格: ${passCount}`;
+    document.getElementById('failCount').textContent = `不合格: ${failCount}`;
+    
+    document.getElementById('resultsGrid').innerHTML = results.map(r => `
+        <div class="result-card">
+            <img src="${r.result_image}" class="result-image" alt="${r.filename}">
+            <div class="result-info">
+                <div class="result-filename">${r.filename}</div>
+                <span class="result-status ${r.conclusion === '合格' ? 'pass' : 'fail'}">${r.conclusion}</span>
+                <div class="result-defects">${r.detections.length > 0 ? r.detections.map(d => d.class_name).join(', ') : '无缺陷'}</div>
+                <div class="result-actions">
+                    <button class="result-btn" onclick="viewImage('${r.result_image}')">查看大图</button>
+                    <button class="result-btn" onclick="generateReport('${encodeURIComponent(JSON.stringify(r))}')">生成报告</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('resultsSection').classList.add('show');
+}
+
+function viewImage(url) { window.open(url, '_blank'); }
+
+async function generateReport(dataStr) {
+    const data = JSON.parse(decodeURIComponent(dataStr));
+    try {
+        const res = await fetch('/report/pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ detections: data.detections, result_image: data.result_image })
+        });
+        const r = await res.json();
+        if (r.success) window.open(r.url, '_blank');
+        else alert('报告生成失败');
+    } catch (e) { alert('报告生成失败: ' + e.message); }
+}
+</script>
+</body>
+</html>

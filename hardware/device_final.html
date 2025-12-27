@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ACSR电缆AI检测设备 - 完整版</title>
+    <style>
+        body { margin: 0; background: linear-gradient(135deg, #e8eef5 0%, #d0dce8 100%); overflow: hidden; font-family: 'Microsoft YaHei', Arial; }
+        #info { position: absolute; top: 10px; left: 10px; color: #333; 
+                background: rgba(255,255,255,0.95); padding: 20px; border-radius: 15px; 
+                max-width: 280px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        #info h2 { margin: 0 0 15px 0; color: #4f46e5; font-size: 16px; }
+        #info p { margin: 5px 0; font-size: 12px; color: #555; }
+        #info .val { color: #059669; font-weight: bold; }
+        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+                    color: #666; background: rgba(255,255,255,0.9); padding: 10px 25px; 
+                    border-radius: 25px; font-size: 13px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        #title { position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+                 color: #1e293b; font-size: 22px; font-weight: bold; }
+        #title span { color: #4f46e5; }
+        #toggles { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.95);
+                   padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #toggles label { display: block; margin: 8px 0; cursor: pointer; font-size: 13px; color: #444; }
+        #toggles input { margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <div id="title">ACSR<span>VISION</span> Pro</div>
+    <div id="info">
+        <h2>设备规格</h2>
+        <p>整机尺寸: <span class="val">600x450x650mm</span></p>
+        <p>电缆直径: <span class="val">10-50mm</span></p>
+        <p>检测精度: <span class="val">0.1mm</span></p>
+        <p>相机: <span class="val">500万像素</span></p>
+        <p>光源: <span class="val">环形+条形LED</span></p>
+    </div>
+    <div id="toggles">
+        <label><input type="checkbox" id="showShell" checked> 显示外壳</label>
+        <label><input type="checkbox" id="showFrame" checked> 显示框架</label>
+        <label><input type="checkbox" id="showCable" checked> 显示电缆</label>
+    </div>
+    <div id="controls">鼠标拖动旋转 | 滚轮缩放</div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xe8eef5);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 3000);
+        camera.position.set(900, 600, 900);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.target.set(0, 250, 0);
+        
+        // 明亮灯光
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(500, 800, 500);
+        sun.castShadow = true;
+        scene.add(sun);
+        scene.add(new THREE.DirectionalLight(0xffffff, 0.3).translateX(-300).translateY(400));
+        
+        // 材质(明亮配色)
+        const mat = {
+            white: new THREE.MeshStandardMaterial({ color: 0xfafafa, metalness: 0.1, roughness: 0.3 }),
+            silver: new THREE.MeshStandardMaterial({ color: 0xe5e7eb, metalness: 0.7, roughness: 0.2 }),
+            accent: new THREE.MeshStandardMaterial({ color: 0x4f46e5, metalness: 0.5, roughness: 0.3 }),
+            dark: new THREE.MeshStandardMaterial({ color: 0x374151, metalness: 0.6, roughness: 0.4 }),
+            glass: new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, side: THREE.DoubleSide }),
+            led: new THREE.MeshStandardMaterial({ color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 0.8 }),
+            ledWarm: new THREE.MeshStandardMaterial({ color: 0xfef3c7, emissive: 0xfef3c7, emissiveIntensity: 0.6 }),
+            cable: new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.5, roughness: 0.5 }),
+            rubber: new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.9 })
+        };
+        
+        // 地面
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), 
+            new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.8 }));
+        floor.rotation.x = -Math.PI/2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+        
+        // 分组
+        const shellGroup = new THREE.Group();
+        const frameGroup = new THREE.Group();
+        const cableGroup = new THREE.Group();
+        scene.add(shellGroup, frameGroup, cableGroup);
+        
+        // ========== 脚架系统 ==========
+        function createLeg(x, z, angle) {
+            const g = new THREE.Group();
+            // 主腿(斜向)
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(15, 20, 200, 16), mat.silver);
+            leg.position.y = 100;
+            g.add(leg);
+            // 脚垫(橡胶)
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(30, 35, 15, 16), mat.rubber);
+            foot.position.y = 7;
+            g.add(foot);
+            // 调节螺丝
+            const screw = new THREE.Mesh(new THREE.CylinderGeometry(8, 8, 20, 16), mat.dark);
+            screw.position.y = 20;
+            g.add(screw);
+            // 连接件
+            const joint = new THREE.Mesh(new THREE.SphereGeometry(20, 16, 16), mat.silver);
+            joint.position.y = 200;
+            g.add(joint);
+            g.position.set(x, 0, z);
+            g.rotation.x = angle * 0.15;
+            g.rotation.z = (x > 0 ? -1 : 1) * 0.1;
+            frameGroup.add(g);
+        }
+        createLeg(-250, -180, -1);
+        createLeg(250, -180, -1);
+        createLeg(-250, 180, 1);
+        createLeg(250, 180, 1);
+        
+        // ========== 主机身底座 ==========
+        const baseBottom = new THREE.Mesh(new THREE.BoxGeometry(520, 20, 380), mat.white);
+        baseBottom.position.y = 210;
+        baseBottom.castShadow = true;
+        frameGroup.add(baseBottom);
+        
+        // 底座装饰条
+        const baseStripe = new THREE.Mesh(new THREE.BoxGeometry(530, 5, 10), mat.accent);
+        baseStripe.position.set(0, 220, 195);
+        frameGroup.add(baseStripe);
+        
+        // ========== 框架立柱 ==========
+        function createPillar(x, z) {
+            const g = new THREE.Group();
+            const pillar = new THREE.Mesh(new THREE.BoxGeometry(30, 350, 30), mat.silver);
+            pillar.position.y = 175;
+            g.add(pillar);
+            // 装饰槽
+            const groove = new THREE.Mesh(new THREE.BoxGeometry(8, 340, 5), mat.accent);
+            groove.position.set(0, 175, 17);
+            g.add(groove);
+            g.position.set(x, 220, z);
+            frameGroup.add(g);
+        }
+        createPillar(-230, -165);
+        createPillar(230, -165);
+        createPillar(-230, 165);
+        createPillar(230, 165);
+        
+        // 顶部横梁
+        const topBeamFront = new THREE.Mesh(new THREE.BoxGeometry(490, 25, 25), mat.silver);
+        topBeamFront.position.set(0, 580, -165);
+        frameGroup.add(topBeamFront);
+        const topBeamBack = new THREE.Mesh(new THREE.BoxGeometry(490, 25, 25), mat.silver);
+        topBeamBack.position.set(0, 580, 165);
+        frameGroup.add(topBeamBack);
+        const topBeamLeft = new THREE.Mesh(new THREE.BoxGeometry(25, 25, 355), mat.silver);
+        topBeamLeft.position.set(-230, 580, 0);
+        frameGroup.add(topBeamLeft);
+        const topBeamRight = new THREE.Mesh(new THREE.BoxGeometry(25, 25, 355), mat.silver);
+        topBeamRight.position.set(230, 580, 0);
+        frameGroup.add(topBeamRight);
+        
+        // ========== 相机安装架 ==========
+        const camMount = new THREE.Mesh(new THREE.BoxGeometry(150, 15, 120), mat.silver);
+        camMount.position.set(0, 565, 0);
+        frameGroup.add(camMount);
+        
+        // 相机主体
+        const camBody = new THREE.Mesh(new THREE.BoxGeometry(80, 70, 70), mat.dark);
+        camBody.position.set(0, 520, 0);
+        frameGroup.add(camBody);
+        
+        // 镜头
+        const camLens = new THREE.Mesh(new THREE.CylinderGeometry(30, 35, 50, 32), mat.dark);
+        camLens.position.set(0, 460, 0);
+        frameGroup.add(camLens);
+        const lensRing = new THREE.Mesh(new THREE.TorusGeometry(33, 3, 16, 32), mat.accent);
+        lensRing.rotation.x = Math.PI/2;
+        lensRing.position.set(0, 440, 0);
+        frameGroup.add(lensRing);
+        const lensGlass = new THREE.Mesh(new THREE.CircleGeometry(28, 32), 
+            new THREE.MeshStandardMaterial({ color: 0x1e3a5f, metalness: 0.9, roughness: 0.1 }));
+        lensGlass.rotation.x = Math.PI/2;
+        lensGlass.position.set(0, 434, 0);
+        frameGroup.add(lensGlass);
+        
+        // 相机指示灯
+        const camLed = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 16), mat.led);
+        camLed.position.set(45, 530, 0);
+        frameGroup.add(camLed);
+        
+        // ========== 环形光源 ==========
+        const ringLight = new THREE.Mesh(new THREE.TorusGeometry(80, 12, 16, 48), mat.ledWarm);
+        ringLight.rotation.x = Math.PI/2;
+        ringLight.position.set(0, 420, 0);
+        frameGroup.add(ringLight);
+        
+        // ========== 侧面条形光源 ==========
+        function createBarLight(x) {
+            const g = new THREE.Group();
+            const housing = new THREE.Mesh(new THREE.BoxGeometry(25, 180, 40), mat.white);
+            g.add(housing);
+            const led = new THREE.Mesh(new THREE.BoxGeometry(15, 160, 10), mat.ledWarm);
+            led.position.z = 20;
+            g.add(led);
+            g.position.set(x, 350, 0);
+            g.rotation.z = x > 0 ? -0.25 : 0.25;
+            frameGroup.add(g);
+        }
+        createBarLight(-180);
+        createBarLight(180);
+        
+        // ========== 电缆通道 ==========
+        // V型槽(检测区)
+        const vBase = new THREE.Mesh(new THREE.BoxGeometry(180, 20, 80), mat.silver);
+        vBase.position.set(0, 225, 0);
+        frameGroup.add(vBase);
+        
+        // ========== 电缆导向支架 ==========
+        function createCableGuide(x) {
+            const g = new THREE.Group();
+            // U型支架
+            const leftArm = new THREE.Mesh(new THREE.BoxGeometry(10, 60, 10), mat.silver);
+            leftArm.position.set(0, 30, -30);
+            g.add(leftArm);
+            const rightArm = new THREE.Mesh(new THREE.BoxGeometry(10, 60, 10), mat.silver);
+            rightArm.position.set(0, 30, 30);
+            g.add(rightArm);
+            const bottom = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 70), mat.silver);
+            bottom.position.set(0, 5, 0);
+            g.add(bottom);
+            g.position.set(x, 220, 0);
+            frameGroup.add(g);
+        }
+        createCableGuide(-300);
+        createCableGuide(300);
+        
+        // ========== 电缆 ==========
+        const cableCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-500, 255, 0),
+            new THREE.Vector3(-300, 250, 0),
+            new THREE.Vector3(0, 245, 0),
+            new THREE.Vector3(300, 250, 0),
+            new THREE.Vector3(500, 255, 0)
+        ]);
+        const cableMesh = new THREE.Mesh(new THREE.TubeGeometry(cableCurve, 80, 12, 24), mat.cable);
+        cableMesh.castShadow = true;
+        cableGroup.add(cableMesh);
+        // 螺旋纹
+        for(let i = 0; i <= 40; i++) {
+            const t = i / 40;
+            const pos = cableCurve.getPoint(t);
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(12, 1, 8, 24), 
+                new THREE.MeshStandardMaterial({ color: 0x6b7280 }));
+            ring.rotation.y = Math.PI/2;
+            ring.position.copy(pos);
+            cableGroup.add(ring);
+        }
+        
+        // ========== 外壳(透明) - 带电缆进出口 ==========
+        // 顶部外壳
+        const shellTop = new THREE.Mesh(new THREE.BoxGeometry(500, 200, 360), mat.glass);
+        shellTop.position.set(0, 500, 0);
+        shellGroup.add(shellTop);
+        
+        // 左侧面板(带开口)
+        const shellLeftTop = new THREE.Mesh(new THREE.BoxGeometry(10, 150, 360), mat.glass);
+        shellLeftTop.position.set(-250, 475, 0);
+        shellGroup.add(shellLeftTop);
+        const shellLeftBottom = new THREE.Mesh(new THREE.BoxGeometry(10, 100, 120), mat.glass);
+        shellLeftBottom.position.set(-250, 300, -120);
+        shellGroup.add(shellLeftBottom);
+        const shellLeftBottom2 = new THREE.Mesh(new THREE.BoxGeometry(10, 100, 120), mat.glass);
+        shellLeftBottom2.position.set(-250, 300, 120);
+        shellGroup.add(shellLeftBottom2);
+        
+        // 右侧面板(带开口)
+        const shellRightTop = new THREE.Mesh(new THREE.BoxGeometry(10, 150, 360), mat.glass);
+        shellRightTop.position.set(250, 475, 0);
+        shellGroup.add(shellRightTop);
+        const shellRightBottom = new THREE.Mesh(new THREE.BoxGeometry(10, 100, 120), mat.glass);
+        shellRightBottom.position.set(250, 300, -120);
+        shellGroup.add(shellRightBottom);
+        const shellRightBottom2 = new THREE.Mesh(new THREE.BoxGeometry(10, 100, 120), mat.glass);
+        shellRightBottom2.position.set(250, 300, 120);
+        shellGroup.add(shellRightBottom2);
+        
+        // 后面板
+        const shellBack = new THREE.Mesh(new THREE.BoxGeometry(500, 350, 10), mat.glass);
+        shellBack.position.set(0, 425, -180);
+        shellGroup.add(shellBack);
+        
+        // 前面板(上部)
+        const shellFrontTop = new THREE.Mesh(new THREE.BoxGeometry(500, 150, 10), mat.glass);
+        shellFrontTop.position.set(0, 525, 180);
+        shellGroup.add(shellFrontTop);
+        // 外壳边框
+        const edgeMat = new THREE.MeshStandardMaterial({ color: 0x4f46e5, metalness: 0.6, roughness: 0.3 });
+        const edges = [
+            [500, 5, 5, 0, 600, -180], [500, 5, 5, 0, 600, 180],
+            [500, 5, 5, 0, 250, -180], [500, 5, 5, 0, 250, 180],
+            [5, 350, 5, -250, 425, -180], [5, 350, 5, 250, 425, -180],
+            [5, 350, 5, -250, 425, 180], [5, 350, 5, 250, 425, 180]
+        ];
+        edges.forEach(e => {
+            const edge = new THREE.Mesh(new THREE.BoxGeometry(e[0], e[1], e[2]), edgeMat);
+            edge.position.set(e[3], e[4], e[5]);
+            shellGroup.add(edge);
+        });
+        
+        // ========== 控制面板 ==========
+        const panelG = new THREE.Group();
+        const panelBody = new THREE.Mesh(new THREE.BoxGeometry(140, 90, 20), mat.white);
+        panelG.add(panelBody);
+        const screen = new THREE.Mesh(new THREE.PlaneGeometry(110, 65), 
+            new THREE.MeshBasicMaterial({ color: 0x1e293b }));
+        screen.position.z = 11;
+        panelG.add(screen);
+        const btnGreen = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 8, 32), mat.led);
+        btnGreen.rotation.x = Math.PI/2;
+        btnGreen.position.set(-50, -30, 15);
+        panelG.add(btnGreen);
+        const btnBlue = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 8, 32), 
+            new THREE.MeshStandardMaterial({ color: 0x3b82f6, emissive: 0x3b82f6, emissiveIntensity: 0.5 }));
+        btnBlue.rotation.x = Math.PI/2;
+        btnBlue.position.set(0, -30, 15);
+        panelG.add(btnBlue);
+        panelG.position.set(0, 320, 210);
+        panelG.rotation.x = -0.4;
+        frameGroup.add(panelG);
+        
+        // ========== 传送带装置(优化版) ==========
+        function createConveyorBelt(x, isLeft) {
+            const g = new THREE.Group();
+            // 主框架(更紧凑)
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(200, 25, 80), mat.silver);
+            frame.position.y = 12;
+            g.add(frame);
+            // 传送带表面(橡胶质感)
+            const belt = new THREE.Mesh(new THREE.BoxGeometry(190, 8, 70), mat.rubber);
+            belt.position.y = 28;
+            g.add(belt);
+            // 传送带纹理线条
+            for(let i = -80; i <= 80; i += 20) {
+                const line = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 68), mat.dark);
+                line.position.set(i, 33, 0);
+                g.add(line);
+            }
+            // 两端滚筒
+            const roller1 = new THREE.Mesh(new THREE.CylinderGeometry(12, 12, 75, 32), mat.dark);
+            roller1.rotation.x = Math.PI/2;
+            roller1.position.set(-90, 18, 0);
+            g.add(roller1);
+            const roller2 = new THREE.Mesh(new THREE.CylinderGeometry(12, 12, 75, 32), mat.dark);
+            roller2.rotation.x = Math.PI/2;
+            roller2.position.set(90, 18, 0);
+            g.add(roller2);
+            // 侧板
+            const side1 = new THREE.Mesh(new THREE.BoxGeometry(200, 35, 5), mat.panel);
+            side1.position.set(0, 17, -40);
+            g.add(side1);
+            const side2 = new THREE.Mesh(new THREE.BoxGeometry(200, 35, 5), mat.panel);
+            side2.position.set(0, 17, 40);
+            g.add(side2);
+            // 支腿(4条)
+            for(let lx of [-80, 80]) {
+                for(let lz of [-30, 30]) {
+                    const leg = new THREE.Mesh(new THREE.CylinderGeometry(6, 8, 220, 16), mat.silver);
+                    leg.position.set(lx, -110, lz);
+                    g.add(leg);
+                    // 脚垫
+                    const foot = new THREE.Mesh(new THREE.CylinderGeometry(12, 14, 5, 16), mat.rubber);
+                    foot.position.set(lx, -222, lz);
+                    g.add(foot);
+                }
+            }
+            g.position.set(x, 250, 0);
+            frameGroup.add(g);
+        }
+        createConveyorBelt(-480, true);
+        createConveyorBelt(480, false);
+        
+        // ========== 笔记本电脑(放在侧面桌子上) ==========
+        const laptopGroup = new THREE.Group();
+        // 桌子
+        const desk = new THREE.Mesh(new THREE.BoxGeometry(400, 20, 300), mat.white);
+        desk.position.y = 360;
+        laptopGroup.add(desk);
+        // 桌腿
+        const deskLeg1 = new THREE.Mesh(new THREE.BoxGeometry(20, 360, 20), mat.silver);
+        deskLeg1.position.set(-180, 180, -130);
+        laptopGroup.add(deskLeg1);
+        const deskLeg2 = new THREE.Mesh(new THREE.BoxGeometry(20, 360, 20), mat.silver);
+        deskLeg2.position.set(180, 180, -130);
+        laptopGroup.add(deskLeg2);
+        const deskLeg3 = new THREE.Mesh(new THREE.BoxGeometry(20, 360, 20), mat.silver);
+        deskLeg3.position.set(-180, 180, 130);
+        laptopGroup.add(deskLeg3);
+        const deskLeg4 = new THREE.Mesh(new THREE.BoxGeometry(20, 360, 20), mat.silver);
+        deskLeg4.position.set(180, 180, 130);
+        laptopGroup.add(deskLeg4);
+        // 笔记本底座
+        const laptopBase = new THREE.Mesh(new THREE.BoxGeometry(280, 12, 200), mat.dark);
+        laptopBase.position.set(0, 380, 20);
+        laptopGroup.add(laptopBase);
+        // 键盘区
+        const keyboard = new THREE.Mesh(new THREE.BoxGeometry(250, 3, 100), mat.panel);
+        keyboard.position.set(0, 388, 40);
+        laptopGroup.add(keyboard);
+        // 触控板
+        const touchpad = new THREE.Mesh(new THREE.BoxGeometry(80, 2, 50), mat.silver);
+        touchpad.position.set(0, 388, -30);
+        laptopGroup.add(touchpad);
+        // 屏幕(打开状态)
+        const screenBase = new THREE.Mesh(new THREE.BoxGeometry(280, 180, 8), mat.dark);
+        screenBase.position.set(0, 480, -100);
+        screenBase.rotation.x = -0.2;
+        laptopGroup.add(screenBase);
+        // 屏幕显示
+        const laptopScreen = new THREE.Mesh(new THREE.PlaneGeometry(260, 160), 
+            new THREE.MeshBasicMaterial({ color: 0x1e3a5f }));
+        laptopScreen.position.set(0, 480, -95);
+        laptopScreen.rotation.x = -0.2;
+        laptopGroup.add(laptopScreen);
+        // 电源指示灯
+        const laptopLed = new THREE.Mesh(new THREE.SphereGeometry(3, 16, 16), mat.led);
+        laptopLed.position.set(-120, 388, 100);
+        laptopGroup.add(laptopLed);
+        laptopGroup.position.set(500, 0, 300);
+        frameGroup.add(laptopGroup);
+        
+        // ========== USB连接线(从顶部出线，走线槽隐藏) ==========
+        // 线槽盒(设备顶部)
+        const cableBox = new THREE.Mesh(new THREE.BoxGeometry(60, 30, 40), mat.panel);
+        cableBox.position.set(0, 615, -150);
+        frameGroup.add(cableBox);
+        // 垂直线槽(沿设备背面下行)
+        const cableTray1 = new THREE.Mesh(new THREE.BoxGeometry(30, 400, 25), mat.panel);
+        cableTray1.position.set(0, 400, -195);
+        frameGroup.add(cableTray1);
+        // 水平线槽(地面走线)
+        const cableTray2 = new THREE.Mesh(new THREE.BoxGeometry(30, 20, 600), mat.panel);
+        cableTray2.position.set(0, 10, 100);
+        frameGroup.add(cableTray2);
+        // 转角线槽
+        const cableTray3 = new THREE.Mesh(new THREE.BoxGeometry(500, 20, 30), mat.panel);
+        cableTray3.position.set(250, 10, 400);
+        frameGroup.add(cableTray3);
+        // USB线(隐藏在线槽内，只露出两端)
+        const usbCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 600, -150),
+            new THREE.Vector3(0, 200, -190),
+            new THREE.Vector3(0, 15, -100),
+            new THREE.Vector3(0, 15, 400),
+            new THREE.Vector3(480, 15, 400),
+            new THREE.Vector3(500, 370, 350)
+        ]);
+        const usbCable = new THREE.Mesh(new THREE.TubeGeometry(usbCurve, 60, 3, 8), 
+            new THREE.MeshStandardMaterial({ color: 0x374151 }));
+        frameGroup.add(usbCable);
+        
+        // ========== 品牌标识 ==========
+        function addLabel(text, x, y, z, size, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.font = 'bold ' + size + 'px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 256, 80);
+            const tex = new THREE.CanvasTexture(canvas);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+            sprite.position.set(x, y, z);
+            sprite.scale.set(size * 3, size * 0.8, 1);
+            scene.add(sprite);
+        }
+        addLabel('ASCRVISION Pro', 0, 650, 0, 40, '#4f46e5');
+        
+        // ========== 切换控制 ==========
+        document.getElementById('showShell').onchange = e => shellGroup.visible = e.target.checked;
+        document.getElementById('showFrame').onchange = e => frameGroup.visible = e.target.checked;
+        document.getElementById('showCable').onchange = e => cableGroup.visible = e.target.checked;
+        
+        // 动画
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
