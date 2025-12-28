@@ -41,19 +41,19 @@ model.model.names = CLASS_NAMES
 
 @app.route('/')
 def index():
+    return render_template('landing.html')
+
+@app.route('/detect')
+def detect_page():
     return render_template('detect.html')
 
-@app.route('/landing')
-def landing():
-    return render_template('landing.html')
+@app.route('/batch')
+def batch_page():
+    return render_template('batch.html')
 
 @app.route('/3d')
 def view_3d():
     return render_template('3d_view.html')
-
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
 
 @app.route('/detect', methods=['POST'])
 def detect():
@@ -180,10 +180,6 @@ def generate_report():
 @app.route('/report/download/<filename>')
 def download_report(filename):
     return send_from_directory(app.config['REPORT_FOLDER'], filename, as_attachment=True)
-
-@app.route('/batch', methods=['GET'])
-def batch_page():
-    return render_template('batch.html')
 
 @app.route('/batch/detect', methods=['POST'])
 def batch_detect():

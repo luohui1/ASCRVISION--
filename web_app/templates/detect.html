@@ -3,405 +3,715 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI质检系统 - CableVision AI</title>
+    <title>智能检测 - ACSR VISION</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-:root {
-    --bg-primary: #09090b;
-    --bg-secondary: #18181b;
-    --bg-tertiary: #27272a;
-    --bg-glass: rgba(24, 24, 27, 0.85);
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-default: rgba(255, 255, 255, 0.1);
-    --text-primary: #fafafa;
-    --text-secondary: #a1a1aa;
-    --text-tertiary: #71717a;
-    --accent-primary: #3b82f6;
-    --accent-secondary: #2563eb;
-    --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --info: #6366f1;
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+    --void:#030303;
+    --obsidian:#0a0a0a;
+    --carbon:#111;
+    --graphite:#1a1a1a;
+    --steel:#2a2a2a;
+    --gold:#d4af37;
+    --gold-bright:#f4d03f;
+    --gold-dim:rgba(212,175,55,0.12);
+    --gold-glow:rgba(212,175,55,0.4);
+    --ivory:#f8f6f0;
+    --silver:#888;
+    --success:#00ff88;
+    --danger:#ff4757;
+    --scan-line:rgba(212,175,55,0.03);
+}
+html{font-size:16px}
+body{
+    font-family:'Rajdhani',sans-serif;
+    background:var(--void);
+    color:var(--ivory);
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+}
+body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+        repeating-linear-gradient(0deg,var(--scan-line) 0px,var(--scan-line) 1px,transparent 1px,transparent 3px),
+        radial-gradient(ellipse at 50% 0%,rgba(212,175,55,0.08) 0%,transparent 60%);
+    pointer-events:none;
+    z-index:0;
 }
 
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    line-height: 1.6;
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
+/* Navigation */
+nav{
+    position:fixed;top:0;left:0;right:0;z-index:1000;
+    background:linear-gradient(180deg,rgba(3,3,3,0.98) 0%,rgba(3,3,3,0.9) 100%);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid rgba(212,175,55,0.15);
+    padding:0 40px;
+    height:64px;
+    display:flex;align-items:center;justify-content:space-between;
 }
+.logo{display:flex;align-items:center;gap:14px;text-decoration:none}
+.logo-icon{
+    width:42px;height:42px;
+    border:1.5px solid var(--gold);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    transition:all 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.logo-icon::before{
+    content:'';position:absolute;inset:3px;
+    border:1px solid rgba(212,175,55,0.3);
+    border-radius:50%;
+}
+.logo-icon svg{width:18px;height:18px;color:var(--gold)}
+.logo:hover .logo-icon{transform:rotate(180deg);box-shadow:0 0 20px var(--gold-glow)}
+.logo-text{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:600;letter-spacing:3px;color:var(--ivory)}
+.logo-text span{color:var(--gold)}
 
-.ambient-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-.ambient-orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.3; }
-.ambient-orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%); top: -150px; left: 50%; transform: translateX(-50%); }
-.ambient-orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%); bottom: -100px; right: -100px; }
+.nav-links{display:flex;gap:6px}
+.nav-link{
+    font-family:'Orbitron',monospace;
+    padding:10px 20px;
+    font-size:0.7rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    text-decoration:none;
+    color:var(--silver);
+    border:1px solid transparent;
+    position:relative;
+    transition:all 0.3s;
+}
+.nav-link::before{
+    content:'';position:absolute;bottom:0;left:50%;
+    width:0;height:1px;background:var(--gold);
+    transition:all 0.3s;transform:translateX(-50%);
+}
+.nav-link:hover,.nav-link.active{color:var(--gold)}
+.nav-link:hover::before,.nav-link.active::before{width:60%}
+.nav-link.active{border-color:rgba(212,175,55,0.2);background:var(--gold-dim)}
 
-.nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-    padding: 12px 24px;
-    background: var(--bg-glass);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-subtle);
+/* Main Layout */
+.main{
+    padding:100px 40px 40px;
+    max-width:1600px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:30px;
+    min-height:100vh;
+    position:relative;
+    z-index:1;
 }
-.nav-inner {
-    max-width: 1600px; margin: 0 auto;
-    display: flex; align-items: center; justify-content: space-between;
-}
-.logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.logo-mark {
-    width: 38px; height: 38px;
-    background: var(--accent-gradient);
-    border-radius: var(--radius-md);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-}
-.logo-mark svg { width: 20px; height: 20px; color: white; }
-.logo-text { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
-.logo-text span { color: var(--accent-primary); }
+@media(max-width:1200px){.main{grid-template-columns:1fr;padding:90px 20px 20px}}
 
-.nav-links { display: flex; gap: 4px; }
-.nav-link {
-    padding: 8px 16px; font-size: 0.8rem; font-weight: 500;
-    color: var(--text-secondary); text-decoration: none;
-    border-radius: var(--radius-sm); transition: var(--transition-fast);
+/* Panel Styling */
+.panel{
+    background:linear-gradient(145deg,var(--obsidian) 0%,var(--carbon) 100%);
+    border:1px solid rgba(212,175,55,0.12);
+    position:relative;
+    display:flex;flex-direction:column;
 }
-.nav-link:hover { color: var(--text-primary); background: var(--bg-tertiary); }
-.nav-link.active { color: var(--accent-primary); background: rgba(59, 130, 246, 0.1); }
+.panel::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+    opacity:0.5;
+}
+.panel-corner{
+    position:absolute;width:20px;height:20px;
+    border-color:var(--gold);border-style:solid;border-width:0;
+    opacity:0.6;
+}
+.panel-corner.tl{top:-1px;left:-1px;border-top-width:2px;border-left-width:2px}
+.panel-corner.tr{top:-1px;right:-1px;border-top-width:2px;border-right-width:2px}
+.panel-corner.bl{bottom:-1px;left:-1px;border-bottom-width:2px;border-left-width:2px}
+.panel-corner.br{bottom:-1px;right:-1px;border-bottom-width:2px;border-right-width:2px}
 
-.nav-stats { display: flex; gap: 24px; }
-.nav-stat { text-align: center; }
-.nav-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--accent-primary); }
-.nav-stat-label { font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
-
-.main {
-    position: relative; z-index: 1;
-    padding: 80px 24px 24px;
-    max-width: 1400px; margin: 0 auto;
-    display: grid; grid-template-columns: 1fr 380px; gap: 24px;
+.panel-header{
+    padding:20px 24px;
+    border-bottom:1px solid rgba(212,175,55,0.1);
+    display:flex;align-items:center;justify-content:space-between;
 }
-
-.page-header { grid-column: 1 / -1; text-align: center; margin-bottom: 16px; }
-.page-title { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
-.page-title span { color: var(--accent-primary); }
-
-.panel {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg); overflow: hidden;
+.panel-title{
+    font-family:'Orbitron',monospace;
+    font-size:0.8rem;
+    font-weight:500;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:flex;align-items:center;gap:12px;
 }
-.panel-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border-subtle);
-    display: flex; justify-content: space-between; align-items: center;
+.panel-title svg{width:18px;height:18px;opacity:0.8}
+.panel-badge{
+    font-family:'Orbitron',monospace;
+    padding:5px 12px;
+    background:var(--gold-dim);
+    border:1px solid rgba(212,175,55,0.2);
+    color:var(--gold);
+    font-size:0.6rem;
+    letter-spacing:2px;
 }
-.panel-title { font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-.panel-title-icon {
-    width: 32px; height: 32px;
-    background: rgba(59, 130, 246, 0.1);
-    border-radius: var(--radius-sm);
-    display: flex; align-items: center; justify-content: center;
-}
-.panel-title-icon svg { width: 16px; height: 16px; color: var(--accent-primary); }
-.panel-body { padding: 20px; }
+.panel-body{flex:1;padding:24px;display:flex;flex-direction:column}
 
 /* Upload Zone */
-.upload-zone {
-    border: 2px dashed var(--border-default);
-    border-radius: var(--radius-md);
-    padding: 48px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition-base);
-    background: rgba(59, 130, 246, 0.02);
+.upload-zone{
+    flex:1;
+    border:1px dashed rgba(212,175,55,0.25);
+    background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(212,175,55,0.02) 10px,rgba(212,175,55,0.02) 20px);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;
+    transition:all 0.4s;
+    position:relative;
+    min-height:360px;
+    overflow:hidden;
 }
-.upload-zone:hover, .upload-zone.active {
-    border-color: var(--accent-primary);
-    background: rgba(59, 130, 246, 0.05);
+.upload-zone::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at center,var(--gold-dim) 0%,transparent 70%);
+    opacity:0;transition:opacity 0.4s;
 }
-.upload-icon {
-    width: 64px; height: 64px; margin: 0 auto 16px;
-    background: rgba(59, 130, 246, 0.1);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
+.upload-zone:hover::before,.upload-zone.active::before{opacity:1}
+.upload-zone:hover,.upload-zone.active{border-color:var(--gold);border-style:solid}
+.upload-zone.has-image{border-style:solid;padding:0;background:var(--void)}
+
+.upload-content{text-align:center;padding:40px;position:relative;z-index:1}
+.upload-icon{
+    width:80px;height:80px;margin:0 auto 24px;
+    border:2px solid rgba(212,175,55,0.3);
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.4s;
 }
-.upload-icon svg { width: 28px; height: 28px; color: var(--accent-primary); }
-.upload-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
-.upload-hint { font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 16px; }
-.upload-formats { display: flex; justify-content: center; gap: 8px; }
-.format-tag {
-    padding: 4px 10px; font-size: 0.65rem; font-weight: 600;
-    background: var(--bg-tertiary); border-radius: var(--radius-sm);
-    color: var(--text-secondary); text-transform: uppercase;
+.upload-icon::before,.upload-icon::after{
+    content:'';position:absolute;
+    border:1px solid rgba(212,175,55,0.15);
+}
+.upload-icon::before{inset:6px}
+.upload-icon::after{inset:12px}
+.upload-zone:hover .upload-icon{
+    border-color:var(--gold);
+    transform:scale(1.05);
+    box-shadow:0 0 40px var(--gold-dim);
+}
+.upload-icon svg{width:28px;height:28px;color:var(--gold)}
+
+.upload-title{
+    font-family:'Orbitron',monospace;
+    font-size:1rem;
+    font-weight:500;
+    letter-spacing:2px;
+    margin-bottom:10px;
+}
+.upload-hint{font-size:0.85rem;color:var(--silver);margin-bottom:20px}
+.upload-formats{display:flex;gap:8px;justify-content:center}
+.format-tag{
+    font-family:'Orbitron',monospace;
+    padding:4px 12px;
+    background:var(--graphite);
+    border:1px solid var(--steel);
+    font-size:0.65rem;
+    letter-spacing:1px;
+    color:var(--silver);
 }
 
 /* Preview */
-.preview-container { display: none; }
-.preview-container.show { display: block; }
-.preview-box { position: relative; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-primary); }
-.preview-box img { width: 100%; display: block; }
-.preview-overlay { position: absolute; inset: 0; pointer-events: none; }
-.scan-line {
-    position: absolute; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
-    box-shadow: 0 0 20px var(--accent-primary);
-    display: none;
+.preview-wrap{width:100%;height:100%;position:relative;display:none}
+.preview-wrap.show{display:block}
+.preview-img{width:100%;height:100%;object-fit:contain;background:var(--void)}
+.preview-bar{
+    position:absolute;bottom:0;left:0;right:0;
+    padding:16px 20px;
+    background:linear-gradient(transparent,rgba(0,0,0,0.95));
+    display:flex;align-items:center;justify-content:space-between;
 }
-.scanning .scan-line { display: block; animation: scan 1.5s linear infinite; }
-@keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-
-.preview-actions { display: flex; gap: 12px; margin-top: 16px; }
-.btn {
-    padding: 12px 20px; font-size: 0.8rem; font-weight: 600;
-    border: none; border-radius: var(--radius-md);
-    cursor: pointer; transition: var(--transition-fast);
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+.preview-name{
+    font-size:0.85rem;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    max-width:70%;
 }
-.btn svg { width: 16px; height: 16px; }
-.btn-primary {
-    flex: 1; background: var(--accent-gradient); color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+.preview-change{
+    font-family:'Orbitron',monospace;
+    padding:8px 16px;
+    background:var(--gold);
+    border:none;
+    color:var(--void);
+    font-size:0.65rem;
+    letter-spacing:1px;
+    cursor:pointer;
+    transition:all 0.3s;
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
-.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.btn-outline {
-    background: transparent; border: 1px solid var(--border-default);
-    color: var(--text-secondary);
+.preview-change:hover{background:var(--gold-bright)}
+
+/* Actions */
+.actions{margin-top:20px;display:flex;gap:12px}
+.btn{
+    flex:1;
+    font-family:'Orbitron',monospace;
+    padding:16px 24px;
+    font-size:0.75rem;
+    font-weight:500;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    border:none;
+    cursor:pointer;
+    transition:all 0.3s;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    position:relative;
+    overflow:hidden;
 }
-.btn-outline:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
-
-/* Result */
-.result-placeholder { text-align: center; padding: 60px 20px; }
-.placeholder-icon { width: 56px; height: 56px; margin: 0 auto 16px; color: var(--text-tertiary); }
-.placeholder-icon svg { width: 100%; height: 100%; }
-.placeholder-text { font-size: 0.85rem; color: var(--text-tertiary); }
-
-.result-content { display: none; }
-.result-content.show { display: block; }
-.result-status { text-align: center; padding: 20px; margin-bottom: 16px; border-radius: var(--radius-md); }
-.result-status.pass { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); }
-.result-status.fail { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
-.result-status-icon { font-size: 2rem; margin-bottom: 8px; }
-.result-status-text { font-size: 1rem; font-weight: 600; }
-.result-status.pass .result-status-text { color: var(--success); }
-.result-status.fail .result-status-text { color: var(--danger); }
-
-.defect-list { display: flex; flex-direction: column; gap: 10px; }
-.defect-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px; background: var(--bg-tertiary);
-    border-radius: var(--radius-sm); border-left: 3px solid var(--danger);
+.btn svg{width:16px;height:16px}
+.btn-primary{
+    background:linear-gradient(135deg,var(--gold) 0%,#c9a227 100%);
+    color:var(--void);
 }
-.defect-name { font-size: 0.85rem; font-weight: 500; flex: 1; }
-.defect-conf {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem; padding: 4px 8px;
-    background: rgba(239, 68, 68, 0.15); color: var(--danger);
-    border-radius: var(--radius-sm);
+.btn-primary::before{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(135deg,var(--gold-bright) 0%,var(--gold) 100%);
+    opacity:0;transition:opacity 0.3s;
+}
+.btn-primary:hover::before{opacity:1}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(212,175,55,0.3)}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-primary span,.btn-primary svg{position:relative;z-index:1}
+
+.btn-ghost{
+    background:transparent;
+    border:1px solid rgba(212,175,55,0.3);
+    color:var(--gold);
+}
+.btn-ghost:hover{background:var(--gold-dim);border-color:var(--gold)}
+
+/* Result Panel */
+.result-empty{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    text-align:center;padding:40px;
+}
+.result-empty-icon{
+    width:100px;height:100px;margin-bottom:24px;
+    border:1px solid var(--steel);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+}
+.result-empty-icon::before{content:'';position:absolute;inset:8px;border:1px solid rgba(212,175,55,0.1)}
+.result-empty-icon svg{width:36px;height:36px;color:var(--steel)}
+.result-empty p{font-size:0.9rem;color:var(--silver)}
+
+.result-content{display:none;flex-direction:column;flex:1}
+.result-content.show{display:flex}
+
+.result-image-wrap{
+    flex:1;position:relative;
+    background:var(--void);
+    border:1px solid rgba(212,175,55,0.1);
+    min-height:300px;
+    overflow:hidden;
+}
+.result-img{width:100%;height:100%;object-fit:contain}
+
+/* Loading */
+.loading{
+    position:absolute;inset:0;
+    background:rgba(3,3,3,0.95);
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:20px;z-index:10;
+}
+.loading.show{display:flex}
+.scanner{
+    width:120px;height:120px;
+    border:2px solid var(--gold);
+    position:relative;
+    animation:pulse 2s ease-in-out infinite;
+}
+.scanner::before{
+    content:'';position:absolute;
+    top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+    animation:scan 1.5s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
+@keyframes scan{0%{top:0}100%{top:calc(100% - 2px)}}
+.loading-text{
+    font-family:'Orbitron',monospace;
+    font-size:0.75rem;
+    letter-spacing:3px;
+    color:var(--gold);
+    animation:blink 1s step-end infinite;
+}
+@keyframes blink{50%{opacity:0.5}}
+
+/* Result Summary */
+.result-summary{
+    margin-top:20px;
+    padding:20px;
+    background:var(--obsidian);
+    border:1px solid rgba(212,175,55,0.1);
+}
+.summary-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:16px;margin-bottom:16px;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.summary-status{display:flex;align-items:center;gap:14px}
+.status-indicator{
+    width:48px;height:48px;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+}
+.status-indicator::before{
+    content:'';position:absolute;inset:0;
+    border:2px solid currentColor;opacity:0.2;
+}
+.status-indicator.pass{color:var(--success)}
+.status-indicator.fail{color:var(--danger)}
+.status-indicator svg{width:24px;height:24px}
+.status-label{
+    font-family:'Orbitron',monospace;
+    font-size:1.1rem;font-weight:600;letter-spacing:2px;
+}
+.status-label.pass{color:var(--success)}
+.status-label.fail{color:var(--danger)}
+.summary-time{font-size:0.75rem;color:var(--silver);font-family:'Orbitron',monospace;letter-spacing:1px}
+
+.defect-list{display:flex;flex-direction:column;gap:8px}
+.defect-item{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 14px;
+    background:rgba(255,71,87,0.08);
+    border-left:2px solid var(--danger);
+}
+.defect-name{font-size:0.85rem;display:flex;align-items:center;gap:10px}
+.defect-dot{width:6px;height:6px;background:var(--danger);border-radius:50%}
+.defect-conf{
+    font-family:'Orbitron',monospace;
+    font-size:0.75rem;color:var(--gold);letter-spacing:1px;
+}
+.no-defect{
+    text-align:center;padding:20px;
+    color:var(--success);font-size:0.9rem;
+    background:rgba(0,255,136,0.05);
+    border:1px solid rgba(0,255,136,0.1);
 }
 
-.result-image { margin-top: 16px; border-radius: var(--radius-md); overflow: hidden; }
-.result-image img { width: 100%; display: block; }
+/* Result Actions */
+.result-actions{margin-top:16px;display:flex;gap:10px}
+.action-btn{
+    flex:1;
+    font-family:'Orbitron',monospace;
+    padding:12px;
+    background:transparent;
+    border:1px solid rgba(212,175,55,0.2);
+    color:var(--gold);
+    font-size:0.65rem;
+    letter-spacing:1px;
+    cursor:pointer;
+    transition:all 0.3s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.action-btn svg{width:14px;height:14px}
+.action-btn:hover{background:var(--gold);color:var(--void)}
 
-@media (max-width: 1000px) { .main { grid-template-columns: 1fr; } }
+input[type="file"]{display:none}
+
+/* Hero Title */
+.hero-title{
+    padding:100px 40px 20px;
+    text-align:center;
+    position:relative;
+    z-index:1;
+}
+.title-en{
+    font-family:'Orbitron',monospace;
+    font-size:3.5rem;
+    font-weight:700;
+    letter-spacing:12px;
+    color:var(--ivory);
+    text-shadow:0 0 60px rgba(212,175,55,0.3);
+    margin-bottom:8px;
+    background:linear-gradient(135deg,var(--ivory) 0%,var(--gold) 50%,var(--ivory) 100%);
+    background-size:200% auto;
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    animation:shimmer 4s linear infinite;
+}
+.title-en span{
+    background:linear-gradient(135deg,var(--gold) 0%,var(--gold-bright) 50%,var(--gold) 100%);
+    background-size:200% auto;
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+}
+@keyframes shimmer{to{background-position:200% center}}
+.title-cn{
+    font-family:'Rajdhani','Microsoft YaHei',sans-serif;
+    font-size:1.1rem;
+    font-weight:400;
+    letter-spacing:8px;
+    color:var(--silver);
+    text-transform:uppercase;
+}
+.title-line{
+    width:120px;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+    margin:16px auto 0;
+}
+
+/* Adjust main padding */
+.main{padding-top:20px}
 </style>
 </head>
 <body>
-<div class="ambient-bg">
-    <div class="ambient-orb ambient-orb-1"></div>
-    <div class="ambient-orb ambient-orb-2"></div>
-</div>
-
-<nav class="nav">
-    <div class="nav-inner">
-        <a href="http://localhost:8080" class="logo">
-            <div class="logo-mark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                </svg>
-            </div>
-            <div class="logo-text">Cable<span>Vision</span></div>
-        </a>
-        <div class="nav-links">
-            <a href="/" class="nav-link active">质检系统</a>
-            <a href="http://localhost:5001" class="nav-link">生产监控</a>
-            <a href="http://localhost:5002" class="nav-link">批次追溯</a>
-            <a href="http://localhost:5003" class="nav-link">数据分析</a>
+<nav>
+    <a href="/" class="logo">
+        <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v4m0 14v4M4.22 4.22l2.83 2.83m9.9 9.9l2.83 2.83M1 12h4m14 0h4M4.22 19.78l2.83-2.83m9.9-9.9l2.83-2.83"/>
+            </svg>
         </div>
-        <div class="nav-stats">
-            <div class="nav-stat"><div class="nav-stat-value" id="todayCount">0</div><div class="nav-stat-label">今日检测</div></div>
-            <div class="nav-stat"><div class="nav-stat-value" id="defectCount">0</div><div class="nav-stat-label">缺陷发现</div></div>
-            <div class="nav-stat"><div class="nav-stat-value" id="passRate">0%</div><div class="nav-stat-label">合格率</div></div>
-        </div>
+        <div class="logo-text">ACSR<span>VISION</span></div>
+    </a>
+    <div class="nav-links">
+        <a href="/detect" class="nav-link active">单张检测</a>
+        <a href="/batch" class="nav-link">批量检测</a>
+        <a href="/3d" class="nav-link">3D展示</a>
+        <a href="/" class="nav-link">首页</a>
     </div>
 </nav>
 
-<main class="main">
-    <div class="page-header">
-        <h1 class="page-title">AI<span>智能质检</span></h1>
-    </div>
+<div class="hero-title">
+    <div class="title-en">ACSR<span>VISION</span></div>
+    <div class="title-cn">钢芯铝绞线智能质检系统</div>
+    <div class="title-line"></div>
+</div>
 
-    <div class="panel upload-panel">
+<main class="main">
+    <div class="panel">
+        <div class="panel-corner tl"></div>
+        <div class="panel-corner tr"></div>
+        <div class="panel-corner bl"></div>
+        <div class="panel-corner br"></div>
         <div class="panel-header">
             <div class="panel-title">
-                <div class="panel-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
-                图像上传
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                IMAGE INPUT
             </div>
+            <span class="panel-badge">AI READY</span>
         </div>
         <div class="panel-body">
             <div class="upload-zone" id="uploadZone">
-                <div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 14.899A7 7 0 1115.71 8h1.79a4.5 4.5 0 012.5 8.242"/><path d="M12 12v9"/><path d="M8 17l4-5 4 5"/></svg></div>
-                <div class="upload-title">拖放图像或点击上传</div>
-                <div class="upload-hint">支持 JPG, PNG, BMP 格式</div>
-                <div class="upload-formats"><span class="format-tag">JPG</span><span class="format-tag">PNG</span><span class="format-tag">BMP</span></div>
+                <div class="upload-content" id="uploadContent">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <div class="upload-title">DROP IMAGE HERE</div>
+                    <div class="upload-hint">或点击选择文件上传检测</div>
+                    <div class="upload-formats">
+                        <span class="format-tag">JPG</span>
+                        <span class="format-tag">PNG</span>
+                        <span class="format-tag">WEBP</span>
+                    </div>
+                </div>
+                <div class="preview-wrap" id="previewWrap">
+                    <img id="previewImg" class="preview-img" alt="Preview">
+                    <div class="preview-bar">
+                        <span class="preview-name" id="previewName"></span>
+                        <button class="preview-change" onclick="changeImg(event)">CHANGE</button>
+                    </div>
+                </div>
             </div>
             <input type="file" id="fileInput" accept="image/*" hidden>
-            <div class="preview-container" id="previewContainer">
-                <div class="preview-box"><img id="previewImg" src="" alt="预览"><div class="preview-overlay"><div class="scan-line"></div></div></div>
-                <div class="preview-actions">
-                    <button class="btn btn-outline" onclick="resetUpload()">重新上传</button>
-                    <button class="btn btn-primary" id="detectBtn" onclick="startDetection()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>开始检测</button>
-                </div>
+            <div class="actions">
+                <button class="btn btn-primary" id="detectBtn" disabled onclick="runDetect()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <span>START SCAN</span>
+                </button>
+                <button class="btn btn-ghost" onclick="clearAll()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    <span>CLEAR</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="panel result-panel">
+    <div class="panel">
+        <div class="panel-corner tl"></div>
+        <div class="panel-corner tr"></div>
+        <div class="panel-corner bl"></div>
+        <div class="panel-corner br"></div>
         <div class="panel-header">
             <div class="panel-title">
-                <div class="panel-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div>
-                检测结果
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                ANALYSIS RESULT
             </div>
         </div>
         <div class="panel-body">
-            <div class="result-placeholder" id="resultPlaceholder">
-                <div class="placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-                <div class="placeholder-text">等待检测...</div>
+            <div class="result-empty" id="resultEmpty">
+                <div class="result-empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z"/>
+                        <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                </div>
+                <p>上传图片启动AI智能检测</p>
             </div>
-            <div class="result-content" id="resultContent"></div>
+            <div class="result-content" id="resultContent">
+                <div class="result-image-wrap">
+                    <img id="resultImg" class="result-img" alt="Result">
+                    <div class="loading" id="loading">
+                        <div class="scanner"></div>
+                        <div class="loading-text">ANALYZING...</div>
+                    </div>
+                </div>
+                <div class="result-summary" id="resultSummary"></div>
+                <div class="result-actions" id="resultActions"></div>
+            </div>
         </div>
     </div>
 </main>
 
 <script>
+let currentFile = null;
+let currentResult = null;
+
 const uploadZone = document.getElementById('uploadZone');
 const fileInput = document.getElementById('fileInput');
-const previewContainer = document.getElementById('previewContainer');
-const previewImg = document.getElementById('previewImg');
-const previewBox = document.querySelector('.preview-box');
 const detectBtn = document.getElementById('detectBtn');
-const resultPlaceholder = document.getElementById('resultPlaceholder');
-const resultContent = document.getElementById('resultContent');
+const uploadContent = document.getElementById('uploadContent');
+const previewWrap = document.getElementById('previewWrap');
 
-let currentFile = null;
-
-// Upload handlers
-uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('click', e => {
+    if (!e.target.closest('.preview-change')) fileInput.click();
+});
 uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('active'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('active'));
 uploadZone.addEventListener('drop', e => {
     e.preventDefault();
     uploadZone.classList.remove('active');
-    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
 });
-fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
 
-function handleFile(file) {
+function loadFile(file) {
     if (!file.type.startsWith('image/')) return alert('请上传图片文件');
     currentFile = file;
     const reader = new FileReader();
     reader.onload = e => {
-        previewImg.src = e.target.result;
-        uploadZone.style.display = 'none';
-        previewContainer.classList.add('show');
-        resultPlaceholder.style.display = 'block';
-        resultContent.classList.remove('show');
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('previewName').textContent = file.name;
+        uploadContent.style.display = 'none';
+        previewWrap.classList.add('show');
+        uploadZone.classList.add('has-image');
+        detectBtn.disabled = false;
     };
     reader.readAsDataURL(file);
 }
 
-function resetUpload() {
-    currentFile = null;
+function changeImg(e) { e.stopPropagation(); fileInput.click(); }
+
+function clearAll() {
+    currentFile = null; currentResult = null;
     fileInput.value = '';
-    previewImg.src = '';
-    uploadZone.style.display = 'block';
-    previewContainer.classList.remove('show');
-    previewBox.classList.remove('scanning');
-    resultPlaceholder.style.display = 'block';
-    resultContent.classList.remove('show');
+    uploadContent.style.display = 'block';
+    previewWrap.classList.remove('show');
+    uploadZone.classList.remove('has-image');
+    detectBtn.disabled = true;
+    document.getElementById('resultEmpty').style.display = 'flex';
+    document.getElementById('resultContent').classList.remove('show');
 }
 
-async function startDetection() {
+async function runDetect() {
     if (!currentFile) return;
     detectBtn.disabled = true;
-    previewBox.classList.add('scanning');
-    resultPlaceholder.innerHTML = '<div class="placeholder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div class="placeholder-text">正在检测...</div>';
+    document.getElementById('resultEmpty').style.display = 'none';
+    document.getElementById('resultContent').classList.add('show');
+    document.getElementById('loading').classList.add('show');
     
     const formData = new FormData();
-    formData.append('file', currentFile);
+    formData.append('image', currentFile);
     
     try {
         const res = await fetch('/detect', { method: 'POST', body: formData });
         const data = await res.json();
-        previewBox.classList.remove('scanning');
-        detectBtn.disabled = false;
-        showResult(data);
-        loadStats();
-    } catch (e) {
-        previewBox.classList.remove('scanning');
-        detectBtn.disabled = false;
-        resultPlaceholder.innerHTML = '<div class="placeholder-text" style="color:var(--danger)">检测失败，请重试</div>';
-    }
+        if (data.success) { currentResult = data; renderResult(data); }
+        else alert('检测失败: ' + (data.error || '未知错误'));
+    } catch (err) { alert('检测失败: ' + err.message); }
+    
+    document.getElementById('loading').classList.remove('show');
+    detectBtn.disabled = false;
 }
 
-function showResult(data) {
-    resultPlaceholder.style.display = 'none';
-    const defects = data.detections || [];
-    const isPass = defects.length === 0;
-    
-    let html = `<div class="result-status ${isPass ? 'pass' : 'fail'}">
-        <div class="result-status-icon">${isPass ? '✓' : '!'}</div>
-        <div class="result-status-text">${isPass ? '检测合格' : '发现 ' + defects.length + ' 个缺陷'}</div>
-    </div>`;
-    
-    if (!isPass) {
-        html += '<div class="defect-list">' + defects.map(d => `
-            <div class="defect-item">
-                <div class="defect-name">${d.class_name || d.class}</div>
-                <div class="defect-conf">${(d.confidence * 100).toFixed(1)}%</div>
+function renderResult(data) {
+    document.getElementById('resultImg').src = data.result_image;
+    const isPass = data.conclusion === '合格';
+    const summaryHtml = `
+        <div class="summary-row">
+            <div class="summary-status">
+                <div class="status-indicator ${isPass ? 'pass' : 'fail'}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        ${isPass ? '<path d="M20 6L9 17l-5-5"/>' : '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>'}
+                    </svg>
+                </div>
+                <span class="status-label ${isPass ? 'pass' : 'fail'}">${data.conclusion}</span>
             </div>
-        `).join('') + '</div>';
-    }
+            <span class="summary-time">${new Date().toLocaleString('zh-CN')}</span>
+        </div>
+        <div class="defect-list">
+            ${data.detections.length > 0 
+                ? data.detections.map(d => `
+                    <div class="defect-item">
+                        <span class="defect-name"><span class="defect-dot"></span>${d.class_name}</span>
+                        <span class="defect-conf">${d.confidence}%</span>
+                    </div>`).join('')
+                : '<div class="no-defect">未检测到缺陷，产品质量合格</div>'}
+        </div>`;
+    document.getElementById('resultSummary').innerHTML = summaryHtml;
     
-    if (data.image) {
-        const prefix = data.image.startsWith('data:') ? '' : 'data:image/jpeg;base64,';
-        html += `<div class="result-image"><img src="${prefix}${data.image}" alt="检测结果"></div>`;
-    }
-    
-    resultContent.innerHTML = html;
-    resultContent.classList.add('show');
+    document.getElementById('resultActions').innerHTML = `
+        <button class="action-btn" onclick="window.open('${data.result_image}','_blank')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            VIEW
+        </button>
+        <button class="action-btn" onclick="downloadImg()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            DOWNLOAD
+        </button>
+        <button class="action-btn" onclick="genReport()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+            REPORT
+        </button>`;
 }
 
-async function loadStats() {
+function downloadImg() {
+    if (!currentResult) return;
+    const a = document.createElement('a');
+    a.href = currentResult.result_image;
+    a.download = 'acsr_detection_result.png';
+    a.click();
+}
+
+async function genReport() {
+    if (!currentResult) return;
     try {
-        const res = await fetch('/api/stats');
+        const res = await fetch('/report/pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ detections: currentResult.detections, result_image: currentResult.result_image })
+        });
         const data = await res.json();
-        document.getElementById('todayCount').textContent = data.today_count || 0;
-        document.getElementById('defectCount').textContent = data.defect_count || 0;
-        document.getElementById('passRate').textContent = (data.pass_rate || 0) + '%';
-    } catch (e) {}
+        if (data.success) window.open(data.url, '_blank');
+        else alert('报告生成失败');
+    } catch (e) { alert('报告生成失败: ' + e.message); }
 }
-
-loadStats();
 </script>
 </body>
 </html>
